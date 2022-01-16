@@ -13,8 +13,20 @@ train_data = pd.read_csv(train_path)
 print(train_data[-750400:])
 print(train_data[-750400:].isna().sum())
 
+# +---------------------------------------+
+# |   DAE                                 |
+# +---------------------------------------+
+class DAE:
+    def model(dim, ):
+        # encoder
+        input_vec = Input(shape=(dim,))
+
+        # decoder
+
+
 encoder = Sequential([Dense(2, input_shape=[3])])
 decoder = Sequential([Dense(3, input_shape=[2])])
 autoencoder = Sequential([encoder, decoder])
 autoencoder.compile(loss="mse", optimizer=SGD(lr=0.01))
 plot_model(autoencoder, to_file='autoencoder.png', show_shapes=True)
+
