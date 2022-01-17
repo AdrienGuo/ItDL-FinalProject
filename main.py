@@ -1,3 +1,5 @@
+from operator import concat
+from traceback import print_tb
 import pandas as pd
 import numpy as np
 
@@ -20,10 +22,32 @@ def split_dataframe(df):
 
     return df_list
 
+# This is a type(list)
 df_list = split_dataframe(train_data)
 
+# Split dataframe by nan
+def split_nan(df):
+    nan_list = []
+    for idx in range(df.shape[0]):
+        if df.iloc[idx].isnull().any():
+            nan_list.append(idx)
+    print(nan_list)
+    # rows_with_nan = [index for index, row in df.iterrows() if row.isnull().any()]
+    # df_with_nan = df.iloc[[index for index, row in df.iterrows() if index in rows_with_nan], :]
+    # df_wo_nan = df.iloc[[index for index, row in df.iterrows() if index not in rows_with_nan], :]
+    df_with_nan = df.iloc[[i for i in range(df.shape[0]) if i in nan_list], :]
+    df_wo_nan = df.iloc[[i for i in range(df.shape[0]) if i not in nan_list], :]
+    df_with_nan = df_with_nan.reset_index(drop=True)
+    df_wo_nan = df_wo_nan.reset_index(drop=True)
+    return df_with_nan, df_wo_nan
+
+df_with_nan, df_wo_nan = split_nan(df_list[11][:60])
+print(df_with_nan)
+print(df_wo_nan)
+
+
 # +---------------------------------------+
-# |   DAE                                 |
+# |   DAE                                 
 # +---------------------------------------+
 class DenoisingAE:
     def __init__(self):
@@ -56,23 +80,29 @@ class DenoisingAE:
     
     def predict(self, test):
         predictions = self.model.predict(test)
-        print(predictions)
+        return predictions
 
-
-# get index of row which contains nan
-rows_with_nan = [index for index, row in train_data[:60].iterrows() if row.isnull().any()]
-print(rows_with_nan)
-
-# get df includes/excludes nan
-train_data_with_nan = train_data[:60].iloc[[i for i in range(train_data[:60].shape[0]) if i in rows_with_nan], :]
-train_data_wo_nan = train_data[:60].iloc[[i for i in range(train_data[:60].shape[0]) if i not in rows_with_nan], :]
-print(train_data_wo_nan)
-
-train_data_with_nan = train_data_with_nan.fillna(0)
-
+df_with_nan = df_with_nan.fillna(0)
 DAE = DenoisingAE()
-DAE.train(train_data_wo_nan, train_data_wo_nan)
-DAE.predict(train_data_with_nan)
+DAE.train(df_wo_nan, df_wo_nan)
+predictions = DAE.predict(df_with_nan)
+print(predictions)
 
+# df = df_list[11].sort_values(by=['timestamp'])
 
+def add_predictions(df_with_nan, predictions):
+    pred_list = [predictions[i][-1] for i in range(predictions.shape[0])]
+    pred_df = pd.DataFrame(pred_list, columns=["Target"])
 
+    # Remove column "Target"
+    df_with_nan.drop("Target", axis=1, inplace=True)
+
+    concat_df = pd.concat([df_with_nan, pred_df], axis=1)
+    return concat_df
+
+df_with_nan = add_predictions(df_with_nan, predictions)
+print(df_with_nan)
+
+def merge(df_with_nan, df_wo_nan):
+    
+    pass
