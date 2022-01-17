@@ -10,12 +10,17 @@ directory = "D:\Data\g-research-crypto-forecasting\\"
 train_path = directory + "train.csv"
 asset_path = directory + "asset_details.csv"
 
-
-
 train_data = pd.read_csv(train_path)
-print(train_data[:60])
-print(train_data[:60].isna().sum())
-print(type(train_data))
+
+# Split dataframe by Asset_ID
+def split_dataframe(df):
+    df_list = []
+    for i in range(14):
+        df_list.append(df[df['Asset_ID']==i])
+
+    return df_list
+
+df_list = split_dataframe(train_data)
 
 # +---------------------------------------+
 # |   DAE                                 |
