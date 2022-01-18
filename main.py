@@ -1,5 +1,7 @@
+from operator import index
 import pandas as pd
 import numpy as np
+import time
 
 from sklearn import preprocessing
 from keras.models import Sequential
@@ -25,8 +27,28 @@ def split_dataframe(df):
 df_ori = split_dataframe(train_data)
 df_list = df_ori
 
+# Find nan index
+def find_nan(df):
+    df = df.to_numpy()
+    index_nan = np.where(np.isnan(df))
+    return index_nan
+
+# print("Start find nan")
+# index_nan_list = []
+# for i in range(14):
+#     index_nan = find_nan(df_list[i])
+#     index_nan_list.append(index_nan)
+# print("End find nan")
+# print(index_nan_list[0])
+
+nan_index = find_nan(df_list[11][:60])
+print("="*30)
+print("Nan index")
+print(nan_index)
+print("="*30)
+
 # Normalization
-def normalization(df):
+def normalization(df, nan_index):
     norm_Count = preprocessing.MinMaxScaler()
     norm_Open = preprocessing.MinMaxScaler()
     norm_High = preprocessing.MinMaxScaler()
@@ -58,7 +80,7 @@ def normalization(df):
 # Do Norm
 for i in range(len(df_list)):
     dict_list = []
-    df, dict = normalization(df_list[i])
+    df, dict = normalization(df_list[i], nan_index)
     df_list[i] = df
     dict_list.append(dict)
 
@@ -71,6 +93,7 @@ def split_nan(df):
     for idx in range(df.shape[0]):
         if df.iloc[idx].isnull().any():
             nan_list.append(idx)
+    print("Here is nan_index: {}".format(nan_list))
     # rows_with_nan = [index for index, row in df.iterrows() if row.isnull().any()]
     # df_with_nan = df.iloc[[index for index, row in df.iterrows() if index in rows_with_nan], :]
     # df_wo_nan = df.iloc[[index for index, row in df.iterrows() if index not in rows_with_nan], :]
@@ -80,10 +103,16 @@ def split_nan(df):
     df_wo_nan = df_wo_nan.reset_index(drop=True)
     return df_with_nan, df_wo_nan
 
+start = time.time()
 df_with_nan, df_wo_nan = split_nan(df_list[11][:60])
+end = time.time()
+print("Time for split_nan: {}".format(end-start))
 print(df_with_nan)
 print(df_wo_nan)
 
+# DO Norm
+df_wo_nan, dict = normalization(df_wo_nan)
+print(df_wo_nan)
 
 # +---------------------------------------+
 # |   DAE                                 
