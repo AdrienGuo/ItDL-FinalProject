@@ -11,3 +11,5 @@ train_data = pd.read_csv(train_path)
 print(type(train_data))
 
 print(train_data.isna().sum())
+
+
