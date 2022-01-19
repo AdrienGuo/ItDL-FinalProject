@@ -19,6 +19,10 @@ train_data = pd.read_csv(train_path)
 train_data.dropna(subset=["VWAP"], inplace=True)
 print(train_data.isnull().sum())
 
+print("="*100)
+print("Nan")
+print(train_data.isna().sum())
+
 # Split dataframe by Asset_ID
 def split_dataframe(df):
     df_list = []
@@ -98,6 +102,16 @@ def normalization_nan(df, dict):
     df[['VWAP']] = dict["VWAP"].fit_transform(df[['VWAP']])
     return df
 
+# Do Norm
+# for i in range(len(df_list)):
+#     dict_list = []
+#     df, dict = normalization(df_list[i], nan_index)
+#     df_list[i] = df
+#     dict_list.append(dict)
+
+# print(df_list[11])
+
+
 # Split dataframe by nan
 def split_nan(df):
     nan_list = []
@@ -159,8 +173,10 @@ class DenoisingAE:
 
         # Encoder
         model.add(Dense(units=5, activation="relu"))
+        model.add(Dense(units=3, activation="relu"))
 
         # Decoder
+        model.add(Dense(units=5, activation="relu"))
         model.add(Dense(units=out_dim))
 
         # plot_model(model, to_file='Denoising_AutoEncoder.png', show_shapes=True)
@@ -202,3 +218,6 @@ def merge(df_with_nan, df_wo_nan):
 
 df_all = merge(df_with_nan, df_wo_nan)
 print(df_all)
+
+# ==============================================
+# Not complete, keep working
