@@ -1,3 +1,4 @@
+from re import sub
 import pandas as pd
 import numpy as np
 import time
@@ -6,15 +7,17 @@ from sklearn import preprocessing
 from keras.models import Sequential
 from keras.layers import GaussianNoise
 from keras.layers import Dense
-from keras.utils import plot_model
+# from keras.utils import plot_model
 
-directory = "D:\Data\g-research-crypto-forecasting\\"
+directory = "D:\Data\ItDL_FinalProject\g-research-crypto-forecasting\\"
 
 train_path = directory + "train.csv"
 asset_path = directory + "asset_details.csv"
 
+# Drop rows for VWAP column contain nan
 train_data = pd.read_csv(train_path)
-
+train_data.dropna(subset=["VWAP"], inplace=True)
+print(train_data.isnull().sum())
 
 # Split dataframe by Asset_ID
 def split_dataframe(df):
@@ -41,14 +44,19 @@ def find_nan(df):
 # print("End find nan")
 # print(index_nan_list[0])
 
-nan_index = find_nan(df_list[11][:60])
-print("="*30)
-print("Nan index")
+start = time.time()
+nan_index = find_nan(df_list[11][:])[0]
+# This will return two array [[rows], [columns]]
+# But I only want the row index
+end = time.time()
+print("="*100)
+print("Nan index:")
 print(nan_index)
-print("="*30)
+print("="*100)
+print("Time of find_nan: {}".format(end-start))
 
 # Normalization
-def normalization(df, nan_index):
+def normalization(df):
     norm_Count = preprocessing.MinMaxScaler()
     norm_Open = preprocessing.MinMaxScaler()
     norm_High = preprocessing.MinMaxScaler()
@@ -56,6 +64,7 @@ def normalization(df, nan_index):
     norm_Close = preprocessing.MinMaxScaler()
     norm_Volume = preprocessing.MinMaxScaler()
     norm_VWAP = preprocessing.MinMaxScaler()
+    norm_Target = preprocessing.MinMaxScaler()
 
     df[['Count']] = norm_Count.fit_transform(df[['Count']])
     df[['Open']] = norm_Open.fit_transform(df[['Open']])
@@ -63,7 +72,8 @@ def normalization(df, nan_index):
     df[['Low']] = norm_Low.fit_transform(df[['Low']])
     df[['Close']] = norm_Close.fit_transform(df[['Close']])
     df[['Volume']] = norm_Volume.fit_transform(df[['Volume']])
-    # df[['VWAP']] = norm_VWAP.fit_transform(df[['VWAP']])
+    df[['VWAP']] = norm_VWAP.fit_transform(df[['VWAP']])
+    df[['Target']] = norm_Target.fit_transform(df[['Target']])
 
     dict = {
         "Count": norm_Count,
@@ -73,19 +83,20 @@ def normalization(df, nan_index):
         "Close": norm_Close,
         "Volume": norm_Volume,
         "VWAP": norm_VWAP,
+        "Target": norm_Target,
     }
 
     return df, dict
 
-# Do Norm
-for i in range(len(df_list)):
-    dict_list = []
-    df, dict = normalization(df_list[i], nan_index)
-    df_list[i] = df
-    dict_list.append(dict)
-
-print(df_list[11])
-
+def normalization_nan(df, dict):
+    df[['Count']] = dict["Count"].fit_transform(df[['Count']])
+    df[['Open']] = dict["Open"].fit_transform(df[['Open']])
+    df[['High']] = dict["High"].fit_transform(df[['High']])
+    df[['Low']] = dict["Low"].fit_transform(df[['Low']])
+    df[['Close']] = dict["Close"].fit_transform(df[['Close']])
+    df[['Volume']] = dict["Volume"].fit_transform(df[['Volume']])
+    df[['VWAP']] = dict["VWAP"].fit_transform(df[['VWAP']])
+    return df
 
 # Split dataframe by nan
 def split_nan(df):
@@ -98,8 +109,9 @@ def split_nan(df):
     # df_with_nan = df.iloc[[index for index, row in df.iterrows() if index in rows_with_nan], :]
     # df_wo_nan = df.iloc[[index for index, row in df.iterrows() if index not in rows_with_nan], :]
     df_with_nan = df.iloc[[i for i in range(df.shape[0]) if i in nan_list], :]
-    df_wo_nan = df.iloc[[i for i in range(df.shape[0]) if i not in nan_list], :]
     df_with_nan = df_with_nan.reset_index(drop=True)
+    df_with_nan = df_with_nan.fillna(0)
+    df_wo_nan = df.iloc[[i for i in range(df.shape[0]) if i not in nan_list], :]
     df_wo_nan = df_wo_nan.reset_index(drop=True)
     return df_with_nan, df_wo_nan
 
@@ -107,12 +119,25 @@ start = time.time()
 df_with_nan, df_wo_nan = split_nan(df_list[11][:60])
 end = time.time()
 print("Time for split_nan: {}".format(end-start))
+print("="*100)
+print("Dataframe contains nan:")
 print(df_with_nan)
+
+print("="*100)
+print("Dataframe without nan:")
 print(df_wo_nan)
 
-# DO Norm
-df_wo_nan, dict = normalization(df_wo_nan)
+# Do Norm
+df_wo_nan, norm_dict = normalization(df_wo_nan)
+print("\n"+"="*100)
+print("Do Normalization on dataframe without nan:")
 print(df_wo_nan)
+
+# Do Norm on df with nan
+df_with_nan = normalization_nan(df_with_nan, norm_dict)
+print("\n"+"="*100)
+print("Do Normalization on dataframe with nan:")
+print(df_with_nan)
 
 # +---------------------------------------+
 # |   DAE                                 
@@ -138,7 +163,7 @@ class DenoisingAE:
         # Decoder
         model.add(Dense(units=out_dim))
 
-        plot_model(model, to_file='Denoising_AutoEncoder.png', show_shapes=True)
+        # plot_model(model, to_file='Denoising_AutoEncoder.png', show_shapes=True)
         return model
 
     def train(self, data, label):
@@ -153,7 +178,6 @@ class DenoisingAE:
         predictions = self.model.predict(test)
         return predictions
 
-df_with_nan = df_with_nan.fillna(0)
 DAE = DenoisingAE()
 DAE.train(df_wo_nan, df_wo_nan)
 predictions = DAE.predict(df_with_nan)
