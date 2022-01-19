@@ -16,6 +16,10 @@ asset_path = directory + "asset_details.csv"
 
 train_data = pd.read_csv(train_path)
 
+print("="*100)
+print("Nan")
+print(train_data.isna().sum())
+
 # Split dataframe by Asset_ID
 def split_dataframe(df):
     df_list = []
@@ -78,13 +82,13 @@ def normalization(df, nan_index):
     return df, dict
 
 # Do Norm
-for i in range(len(df_list)):
-    dict_list = []
-    df, dict = normalization(df_list[i], nan_index)
-    df_list[i] = df
-    dict_list.append(dict)
+# for i in range(len(df_list)):
+#     dict_list = []
+#     df, dict = normalization(df_list[i], nan_index)
+#     df_list[i] = df
+#     dict_list.append(dict)
 
-print(df_list[11])
+# print(df_list[11])
 
 
 # Split dataframe by nan
@@ -111,7 +115,7 @@ print(df_with_nan)
 print(df_wo_nan)
 
 # DO Norm
-df_wo_nan, dict = normalization(df_wo_nan)
+df_wo_nan, dict = normalization(df_wo_nan, nan_index)
 print(df_wo_nan)
 
 # +---------------------------------------+
@@ -134,8 +138,10 @@ class DenoisingAE:
 
         # Encoder
         model.add(Dense(units=5, activation="relu"))
+        model.add(Dense(units=3, activation="relu"))
 
         # Decoder
+        model.add(Dense(units=5, activation="relu"))
         model.add(Dense(units=out_dim))
 
         plot_model(model, to_file='Denoising_AutoEncoder.png', show_shapes=True)
@@ -178,3 +184,6 @@ def merge(df_with_nan, df_wo_nan):
 
 df_all = merge(df_with_nan, df_wo_nan)
 print(df_all)
+
+# ==============================================
+# Not complete, keep working
