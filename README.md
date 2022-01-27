@@ -1,7 +1,7 @@
 # ItDL-FinalProject
 Final Project of my Introduction to Deep Learning Class
 
-DAE.py is a test version.
+DAE.py is a test version.<br>
 The main.py is the right code for processing.
 
 ## Denoising Autoencoder
